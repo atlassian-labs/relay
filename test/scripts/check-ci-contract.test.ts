@@ -80,11 +80,25 @@ describe("CI contract", () => {
     expect(unitTestScript).not.toContain("test/ui/app-e2e");
   });
 
-  test("CI runs the aggregated check on pushes to main and on pull requests", () => {
+  test("CI runs on pushes to main and on pull requests", () => {
     expect(ciWorkflow).toMatch(/on:[\s\S]*push:[\s\S]*branches: \[main\]/);
     expect(ciWorkflow).toContain("pull_request:");
     expect(ciWorkflow).toContain("bun install --frozen-lockfile");
-    expect(ciWorkflow).toContain("bun run check");
+  });
+
+  // CI fans the local `bun run check` gates out into parallel jobs. Keep the
+  // two lists identical so a gate added locally cannot be skipped in CI.
+  test("CI validation matrix runs every gate in bun run check", () => {
+    const checkGates = String(packageJson.scripts["check:pinned"])
+      .split(" && ")
+      .map((command) => command.replace(/^bun run /, ""))
+      .filter((script) => script !== "scripts/check-bun-version.ts");
+    const matrixGates = [...ciWorkflow.matchAll(/^\s+script: (\S+)$/gm)].map(([, script]) => script);
+
+    expect(matrixGates).toEqual(checkGates);
+    expect(ciWorkflow).toContain("fail-fast: false");
+    expect(ciWorkflow).toContain("run: bun run scripts/check-bun-version.ts");
+    expect(ciWorkflow).toContain("run: bun run ${{ matrix.script }}");
   });
 
   // Hardening required by the OSS checklist: a fork's pull request must never
