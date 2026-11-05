@@ -11,6 +11,35 @@ const pinnedBunWrapper = await Bun.file("scripts/pinned-bun.sh").text();
 const oxlintConfig = await Bun.file("oxlint.config.json").json();
 const oxfmtConfig = await Bun.file("oxfmt.config.json").json();
 
+interface WorkflowMatrixEntry {
+  readonly id?: string;
+  readonly name: string;
+  readonly script: string;
+  readonly packages?: string;
+}
+
+interface WorkflowStep {
+  readonly name?: string;
+  readonly if?: string;
+  readonly uses?: string;
+  readonly run?: string;
+  readonly with?: Readonly<Record<string, string>>;
+}
+
+interface WorkflowJob {
+  readonly strategy?: {
+    readonly "fail-fast"?: boolean;
+    readonly matrix?: { readonly include?: WorkflowMatrixEntry[] };
+  };
+  readonly steps?: WorkflowStep[];
+}
+
+const workflowJobs = (Bun.YAML.parse(ciWorkflow) as { jobs: Record<string, WorkflowJob> }).jobs;
+
+function matrixEntries(jobId: string): WorkflowMatrixEntry[] {
+  return workflowJobs[jobId]?.strategy?.matrix?.include ?? [];
+}
+
 function sourceFiles(root: string): string[] {
   const result: string[] = [];
   for (const entry of readdirSync(root)) {
@@ -93,10 +122,10 @@ describe("CI contract", () => {
       .split(" && ")
       .map((command) => command.replace(/^bun run /, ""))
       .filter((script) => script !== "scripts/check-bun-version.ts");
-    const matrixGates = [...ciWorkflow.matchAll(/^\s+script: (\S+)$/gm)].map(([, script]) => script);
+    const matrixGates = matrixEntries("validate").map((entry) => entry.script);
 
     expect(matrixGates).toEqual(checkGates);
-    expect(ciWorkflow).toContain("fail-fast: false");
+    expect(workflowJobs.validate?.strategy?.["fail-fast"]).toBe(false);
     expect(ciWorkflow).toContain("run: bun run scripts/check-bun-version.ts");
     expect(ciWorkflow).toContain("run: bun run ${{ matrix.script }}");
   });
@@ -121,6 +150,34 @@ describe("CI contract", () => {
     expect(ciWorkflow).toContain("key: bun-${{ runner.os }}-${{ hashFiles('.bun-version', 'bun.lock') }}");
     expect(ciWorkflow).not.toContain("path: node_modules");
     expect(ciWorkflow.indexOf("Cache Bun downloads")).toBeLessThan(ciWorkflow.indexOf("bun install --frozen-lockfile"));
+  });
+
+  test("CI E2E matrix runs real E2E lanes and keeps their results on failure", () => {
+    const lanes = matrixEntries("e2e");
+    const laneScripts = lanes.map((lane) => lane.script);
+
+    expect(laneScripts).toContain("test:e2e:app");
+    expect(laneScripts).toContain("test:e2e:cli");
+    expect(new Set(laneScripts).size).toBe(laneScripts.length);
+    for (const lane of lanes) {
+      expect(packageJson.scripts?.[lane.script]).toBeString();
+      expect(packageJson.scripts?.["test:e2e"]).toContain(lane.script);
+      // Artifact names cannot contain ":", so each lane carries a plain id.
+      expect(lane.id).toMatch(/^[a-z0-9-]+$/);
+    }
+    expect(new Set(lanes.map((lane) => lane.id)).size).toBe(lanes.length);
+    // The app and CLI lanes drive the TUI through `expect` scripts.
+    for (const script of ["test:e2e:app", "test:e2e:cli"]) {
+      expect(lanes.find((lane) => lane.script === script)?.packages).toContain("expect");
+    }
+    expect(workflowJobs.e2e?.strategy?.["fail-fast"]).toBe(false);
+
+    const steps = workflowJobs.e2e?.steps ?? [];
+    expect(steps.some((step) => step.run === "bun run ${{ matrix.script }}")).toBe(true);
+    const upload = steps.find((step) => step.uses?.startsWith("actions/upload-artifact@"));
+    expect(upload?.if).toBe("failure()");
+    expect(upload?.with?.path).toBe("test-results/real-e2e/");
+    expect(upload?.with?.name).toBe("e2e-${{ matrix.id }}");
   });
 
   test("E2E scripts stay wired into clear CI lanes", () => {
