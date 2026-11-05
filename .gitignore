@@ -15,7 +15,6 @@ __pycache__/
 
 # Local runtime / temp artifacts
 .alta/
-.artifactory/
 tmp/
 test-results/
 playwright-report/

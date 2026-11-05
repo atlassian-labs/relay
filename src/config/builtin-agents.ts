@@ -27,8 +27,8 @@ export interface BuiltinAgentDefinition {
 
 function packageRunner(packageName: string, profile: string, env?: Record<string, string>): BuiltinAgentRunnerConfig {
   // Use the ACP registry launch style. `bun x` currently mis-resolves
-  // Atlassian Artifactory npm registry URLs for scoped packages, while `npx`
-  // honors the user's npm configuration correctly.
+  // scoped packages from some custom npm registry URLs, while `npx` honors
+  // the user's npm configuration correctly.
   return {
     command: "npx",
     args: ["--yes", "--loglevel=error", packageName],

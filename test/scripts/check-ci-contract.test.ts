@@ -5,6 +5,7 @@ import { describe, expect, test } from "bun:test";
 const packageJson = await Bun.file("package.json").json();
 const ciWorkflow = await Bun.file(".github/workflows/ci.yml").text();
 const pinnedBunVersion = (await Bun.file(".bun-version").text()).trim();
+const bunLock = await Bun.file("bun.lock").text();
 const preCommitHook = await Bun.file("scripts/hooks/pre-commit").text();
 const pinnedBunWrapper = await Bun.file("scripts/pinned-bun.sh").text();
 const oxlintConfig = await Bun.file("oxlint.config.json").json();
@@ -39,6 +40,15 @@ describe("CI contract", () => {
     // CI resolves Bun from .bun-version rather than pinning it a second time,
     // so the version contract cannot drift from the repository.
     expect(ciWorkflow).toContain("bun-version-file: .bun-version");
+  });
+
+  // A contributor whose global bunfig points at a private mirror writes that
+  // mirror's tarball URLs into bun.lock, which breaks `bun install
+  // --frozen-lockfile` for everyone without access to it. Packages from the
+  // default registry are recorded with an empty URL instead.
+  test("bun.lock resolves packages only from the public npm registry", () => {
+    const tarballHosts = new Set([...bunLock.matchAll(/"https?:\/\/([^/"]+)\/[^"]*\.tgz"/g)].map(([, host]) => host));
+    expect([...tarballHosts]).toEqual(["registry.npmjs.org"]);
   });
 
   test("bun run check keeps local validation aggregated before build", () => {

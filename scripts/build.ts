@@ -60,7 +60,7 @@ async function installBundledPluginDependencies(pluginNames: readonly string[]):
         `${JSON.stringify({ name: `relay-bundled-${pluginName}-dependencies`, private: true, dependencies }, null, 2)}\n`,
       );
 
-      // TODO: Remove this npmjs fallback once Atlassian Artifactory maintains a proxy for @pierre/diffs and its dependencies.
+      // Some npm mirrors do not proxy @pierre/diffs and its dependencies, so install it from npmjs directly.
       const registry =
         registryOverride ?? (dependencies["@pierre/diffs"] !== undefined ? "https://registry.npmjs.org" : undefined);
       const args = ["install", "--production"];
