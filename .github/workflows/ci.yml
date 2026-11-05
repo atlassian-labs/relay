@@ -18,10 +18,31 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
-  check:
-    name: Check
+  # The gates `bun run check` runs locally, fanned out so each one reports its
+  # own status and a slow gate does not hold up the others.
+  validate:
+    name: ${{ matrix.name }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      # Report every failing gate in one run instead of stopping at the first.
+      fail-fast: false
+      matrix:
+        include:
+          - name: Typecheck
+            script: typecheck
+          - name: Lint
+            script: lint
+          - name: Effect Shape Gate
+            script: lint:effect-shape
+          - name: Architecture Boundaries
+            script: lint:boundaries
+          - name: Format Check
+            script: format:check
+          - name: Unit Tests
+            script: test:unit
+          - name: Build
+            script: build
     steps:
       # Third-party actions are pinned to a commit SHA, not a tag: a tag can be
       # moved to point at different code after review.
@@ -38,7 +59,8 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      # The same gate contributors run locally: Bun version, typecheck, lint,
-      # Effect shape, architecture boundaries, format check, unit tests, build.
-      - name: Run checks
-        run: bun run check
+      - name: Check Bun version
+        run: bun run scripts/check-bun-version.ts
+
+      - name: Run ${{ matrix.name }}
+        run: bun run ${{ matrix.script }}
