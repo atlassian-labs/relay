@@ -110,6 +110,25 @@ jobs:
           - id: chat-autoscroll
             name: Chat Autoscroll
             script: test:e2e:chat-autoscroll
+          - id: split-mouse-escape
+            name: Split Mouse Escape
+            script: test:e2e:split-mouse-escape
+            packages: zsh
+          - id: prompt-history
+            name: Prompt History
+            script: test:e2e:prompt-history
+          - id: prompt-queue
+            name: Prompt Queue
+            script: test:e2e:prompt-queue
+          - id: startup-tips
+            name: Startup Tips
+            script: test:e2e:startup-tips
+          - id: tui-stress
+            name: TUI Stress
+            script: test:e2e:tui-stress
+          - id: path-autocomplete
+            name: Path Autocomplete
+            script: test:e2e:path-autocomplete
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

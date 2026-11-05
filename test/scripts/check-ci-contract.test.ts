@@ -164,6 +164,12 @@ describe("CI contract", () => {
       "test:e2e:ui-polish",
       "test:e2e:slash-command",
       "test:e2e:chat-autoscroll",
+      "test:e2e:split-mouse-escape",
+      "test:e2e:prompt-history",
+      "test:e2e:prompt-queue",
+      "test:e2e:startup-tips",
+      "test:e2e:tui-stress",
+      "test:e2e:path-autocomplete",
     ]) {
       expect(laneScripts).toContain(script);
     }
@@ -179,6 +185,8 @@ describe("CI contract", () => {
     for (const script of ["test:e2e:app", "test:e2e:cli"]) {
       expect(lanes.find((lane) => lane.script === script)?.packages).toContain("expect");
     }
+    // The exit mouse-report smoke runs Relay under zsh, which the runner lacks.
+    expect(lanes.find((lane) => lane.script === "test:e2e:split-mouse-escape")?.packages).toContain("zsh");
     expect(workflowJobs.e2e?.strategy?.["fail-fast"]).toBe(false);
 
     const steps = workflowJobs.e2e?.steps ?? [];
