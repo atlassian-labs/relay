@@ -1,0 +1,30 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      // Starts Relay (TUI) under Bun's inspector, waiting for VS Code to attach.
+      // Runs in a real integrated terminal so the TUI renders and takes input.
+      "label": "relay: dev (inspect-wait)",
+      "type": "shell",
+      "command": "bash scripts/pinned-bun.sh --inspect-wait=localhost:6499/relay run --conditions=browser src/index.ts",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "problemMatcher": {
+        // No real diagnostics — this only tells VS Code when the inspector is
+        // ready so the preLaunchTask completes and the debugger can attach.
+        "pattern": {
+          "regexp": "^(?!x)x$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".",
+          "endsPattern": "ws://localhost:6499/relay"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  // Requires the "Bun for Visual Studio Code" extension (oven.bun-vscode).
+  //
+  // Relay is a full-screen TUI. The Bun extension's LAUNCH request always pipes
+  // stdio through the Debug Console, which mangles the TUI and won't take input.
+  // So for the TUI, use the ATTACH flow instead.
+  //
+  // "Attach to Relay" runs a preLaunchTask ("relay: dev (inspect-wait)", see
+  // .vscode/tasks.json) that starts the app in a real integrated terminal under
+  // --inspect-wait, waits until the inspector is listening, then attaches — one F5.
+  // To pass agent flags (e.g. --agent claude), edit the task's command.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "bun",
+      "request": "attach",
+      "name": "Attach to Relay",
+      // Starts the app under the inspector, then attaches — single F5.
+      "preLaunchTask": "relay: dev (inspect-wait)",
+      // Must match the path passed to --inspect-wait in the task.
+      "url": "ws://localhost:6499/relay"
+    },
+    {
+      // Non-TUI launch only (e.g. a script/agent that doesn't render the UI).
+      // For the Relay TUI, use "Attach to Relay" above instead.
+      "type": "bun",
+      "request": "launch",
+      "name": "Debug Relay (launch — non-TUI)",
+      "program": "${workspaceFolder}/src/index.ts",
+      "cwd": "${workspaceFolder}",
+      "runtime": "${userHome}/.bun/bin/bun",
+      "runtimeArgs": ["--conditions=browser"],
+      "args": [],
+      "stopOnEntry": false
+    }
+  ]
+}

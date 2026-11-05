@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Read-only by default. No job here needs to write to the repository, and a
+# token that cannot write is the simplest protection against a malicious pull
+# request. Jobs that need more must opt in explicitly.
+permissions:
+  contents: read
+
+# Superseded runs on the same ref are pointless once a newer commit exists.
+# `main` is never cancelled so every pushed commit keeps a result.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # Third-party actions are pinned to a commit SHA, not a tag: a tag can be
+      # moved to point at different code after review.
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # The same gate contributors run locally: Bun version, typecheck, lint,
+      # Effect shape, architecture boundaries, format check, unit tests, build.
+      - name: Run checks
+        run: bun run check

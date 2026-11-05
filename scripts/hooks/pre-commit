@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "${repo_root}"
+
+# Git hooks run with a stripped PATH — ensure common Bun install locations are available.
+export PATH="${HOME}/.bun/bin:${HOME}/.local/bin:${PATH}"
+
+run_check() {
+  local label="$1"
+  shift
+
+  printf 'pre-commit: %s\n' "${label}" >&2
+
+  # Git hooks export repository-local GIT_* variables. Clear them before
+  # running the check so tests and scripts can create or inspect other repos.
+  while IFS= read -r git_env_var; do
+    unset "${git_env_var}"
+  done < <(git rev-parse --local-env-vars)
+
+  "$@"
+}
+
+if ! command -v bun >/dev/null 2>&1; then
+  echo "pre-commit: bun is required but was not found on PATH" >&2
+  exit 1
+fi
+
+# Keep local commits and CI in lockstep: package.json#check is the same command run by CI.
+run_check "bun run check" bun run check

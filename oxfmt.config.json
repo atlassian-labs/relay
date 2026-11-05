@@ -1,0 +1,16 @@
+{
+  "printWidth": 120,
+  "sortPackageJson": false,
+  "sortImports": false,
+  "ignorePatterns": [
+    "dist",
+    "node_modules",
+    "coverage",
+    ".cache",
+    ".config",
+    ".relay",
+    ".alta",
+    "*.tsbuildinfo",
+    "bun.lock"
+  ]
+}

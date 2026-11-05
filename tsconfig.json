@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "preserve",
+    "jsxImportSource": "@opentui/solid",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "outDir": "./dist",
+    "rootDir": ".",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "types": ["bun-types"],
+    "paths": {
+      "@/*": ["./src/*"],
+      "@atlassian/relay-plugin-sdk": ["./packages/relay-plugin-sdk/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*", "packages/*/src/**/*", "test/**/*", "playwright.config.ts", "playwright-tests/**/*"],
+  "exclude": ["node_modules", "dist", "packages/*/dist"]
+}

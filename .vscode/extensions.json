@@ -1,0 +1,6 @@
+{
+  "recommendations": [
+    // Required by the "Attach to Relay" debug config (.vscode/launch.json).
+    "oven.bun-vscode"
+  ]
+}
