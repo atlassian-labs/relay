@@ -156,8 +156,17 @@ describe("CI contract", () => {
     const lanes = matrixEntries("e2e");
     const laneScripts = lanes.map((lane) => lane.script);
 
-    expect(laneScripts).toContain("test:e2e:app");
-    expect(laneScripts).toContain("test:e2e:cli");
+    for (const script of [
+      "test:e2e:app",
+      "test:e2e:cli",
+      "test:e2e:child-process-exit",
+      "test:e2e:normalized-diff",
+      "test:e2e:ui-polish",
+      "test:e2e:slash-command",
+      "test:e2e:chat-autoscroll",
+    ]) {
+      expect(laneScripts).toContain(script);
+    }
     expect(new Set(laneScripts).size).toBe(laneScripts.length);
     for (const lane of lanes) {
       expect(packageJson.scripts?.[lane.script]).toBeString();

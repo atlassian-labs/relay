@@ -95,6 +95,21 @@ jobs:
             name: CLI
             script: test:e2e:cli
             packages: expect
+          - id: child-process-exit
+            name: Child Process Exit
+            script: test:e2e:child-process-exit
+          - id: normalized-diff
+            name: Normalized Diff
+            script: test:e2e:normalized-diff
+          - id: ui-polish
+            name: UI Polish
+            script: test:e2e:ui-polish
+          - id: slash-command
+            name: Slash Command
+            script: test:e2e:slash-command
+          - id: chat-autoscroll
+            name: Chat Autoscroll
+            script: test:e2e:chat-autoscroll
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -116,7 +131,7 @@ jobs:
 
       # The runner image already provides git and python3.
       - name: Install system packages
-        if: matrix.packages != ''
+        if: matrix.packages
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ${{ matrix.packages }}
 
       - name: Install dependencies
