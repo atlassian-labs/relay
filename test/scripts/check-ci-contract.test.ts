@@ -113,6 +113,16 @@ describe("CI contract", () => {
     for (const ref of actionRefs) expect(ref).toMatch(/^[0-9a-f]{40}$/);
   });
 
+  // Only the download cache is reused; caching node_modules could hide a
+  // lockfile change behind a stale tree.
+  test("CI caches Bun downloads keyed on the Bun version and lockfile", () => {
+    expect(ciWorkflow).toContain("uses: actions/cache@");
+    expect(ciWorkflow).toContain("path: ~/.bun/install/cache");
+    expect(ciWorkflow).toContain("key: bun-${{ runner.os }}-${{ hashFiles('.bun-version', 'bun.lock') }}");
+    expect(ciWorkflow).not.toContain("path: node_modules");
+    expect(ciWorkflow.indexOf("Cache Bun downloads")).toBeLessThan(ciWorkflow.indexOf("bun install --frozen-lockfile"));
+  });
+
   test("E2E scripts stay wired into clear CI lanes", () => {
     const expectedE2eScripts = [
       ["test:e2e:app", "bash scripts/pinned-bun.sh run scripts/run-app-e2e.ts"],
