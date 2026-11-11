@@ -1,0 +1,76 @@
+name: Publish Plugin SDK
+
+# Publishes @atlassian/relay-plugin-sdk to the npm registry. It only runs when a
+# maintainer starts it by hand, and only inside the `npm` environment, which
+# holds the publish token and can require an approval.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Semantic version to publish, for example 0.6.1
+        required: true
+        type: string
+      dist_tag:
+        description: npm dist-tag for the published version
+        required: true
+        default: latest
+        type: choice
+        options: [latest, next, beta]
+      dry_run:
+        description: Run `npm publish --dry-run` instead of publishing
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-plugin-sdk
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: npm
+    permissions:
+      contents: read
+      # Lets npm attest where the package was built (provenance).
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Configure npm registry
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          npm config set registry https://registry.npmjs.org/
+          if [[ "$DRY_RUN" != "true" ]]; then
+            if [[ -z "$NODE_AUTH_TOKEN" ]]; then
+              echo "::error::the npm environment has no NPM_TOKEN secret"
+              exit 1
+            fi
+            npm config set //registry.npmjs.org/:_authToken "$NODE_AUTH_TOKEN"
+          fi
+
+      - name: Publish
+        env:
+          SDK_VERSION: ${{ inputs.version }}
+          NPM_DIST_TAG: ${{ inputs.dist_tag }}
+          PUBLISH_DRY_RUN: ${{ inputs.dry_run }}
+          PUBLISH_PROVENANCE: ${{ github.event.repository.private == false }}
+        run: bun run scripts/ci-publish-plugin-sdk.ts

@@ -95,7 +95,12 @@ function main(): void {
   writePackageVersion(packageJson, requestedVersion);
   run("bun", ["run", "build:plugin-sdk"], repoRoot);
 
-  const publishArgs = ["publish", "--tag", distTag, "--access", "restricted"];
+  // The SDK is a public package on the npm registry, matching its publishConfig.
+  const publishArgs = ["publish", "--tag", distTag, "--access", "public"];
+  // npm only attests provenance for builds from a public repository.
+  if (process.env.PUBLISH_PROVENANCE === "true") {
+    publishArgs.push("--provenance");
+  }
   if (process.env.PUBLISH_DRY_RUN === "true") {
     publishArgs.push("--dry-run");
   }
