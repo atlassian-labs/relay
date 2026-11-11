@@ -1,0 +1,183 @@
+name: Release
+
+# Pushing a `v<version>` tag builds every release archive, validates them, and
+# opens a draft GitHub Release for a maintainer to review and publish. Running
+# the workflow by hand builds and validates the current version without
+# releasing anything, which is how to test a change to this file.
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    name: Resolve version
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # A tag must name exactly the version in package.json, so a release can
+      # never ship archives that report a different version.
+      - name: Resolve and check version
+        id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::package.json version $version is not a semantic version"
+            exit 1
+          fi
+          if [[ "$EVENT_NAME" == "push" && "$REF_NAME" != "v$version" ]]; then
+            echo "::error::tag $REF_NAME does not match package.json version $version"
+            exit 1
+          fi
+          prerelease=false
+          [[ "$version" == *-* ]] && prerelease=true
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
+
+  # Every variant cross-compiles on Linux: the packager installs the target's
+  # native modules and Bun runtime, and Go builds the shim for the target.
+  package:
+    name: Package ${{ matrix.variant }}
+    needs: version
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [darwin-arm64, linux-amd64, linux-arm64, windows-amd64]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          # The shim uses only the standard library, so there is nothing to cache.
+          cache: false
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Package
+        env:
+          VARIANT: ${{ matrix.variant }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: bun run scripts/github-release.ts package --variant="$VARIANT" --version="$VERSION"
+
+      - name: Upload archive
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: relay-${{ matrix.variant }}
+          path: dist/github-release/relay-v${{ needs.version.outputs.version }}-${{ matrix.variant }}.tar.gz
+          if-no-files-found: error
+          retention-days: 7
+
+  # Checks every archive's layout and checksums, and runs the archive built for
+  # each runner's own platform.
+  validate:
+    name: Validate on ${{ matrix.os }}
+    needs: [version, package]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+
+      - name: Download archives
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: relay-*
+          path: dist/github-release
+          merge-multiple: true
+
+      - name: Validate
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          bun run scripts/github-release.ts metadata --version="$VERSION"
+          bun run scripts/github-release.ts validate --version="$VERSION"
+
+  # The only job with write access. It runs for tag pushes only, after every
+  # archive has been validated, in the `release` environment so repository
+  # admins can require an approval before anything is published.
+  release:
+    name: Create draft release
+    if: github.event_name == 'push'
+    needs: [version, validate]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+
+      - name: Download archives
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: relay-*
+          path: dist/github-release
+          merge-multiple: true
+
+      - name: Write checksums and manifest
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+          RELEASE_BASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}
+        run: bun run scripts/github-release.ts metadata --version="$VERSION" --release-base-url="$RELEASE_BASE_URL"
+
+      # A draft is not visible to users until a maintainer reviews the generated
+      # notes and publishes it.
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          PRERELEASE: ${{ needs.version.outputs.prerelease }}
+        run: |
+          args=(--draft --verify-tag --generate-notes --title "Relay $TAG")
+          [[ "$PRERELEASE" == "true" ]] && args+=(--prerelease)
+          gh release create "$TAG" "${args[@]}" dist/github-release/*

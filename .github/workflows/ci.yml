@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Runs the same checks on a merge queue entry, so a required check can gate
+  # the queue once it is enabled in branch protection. Without a queue this
+  # trigger never fires.
+  merge_group:
 
 # Read-only by default. No job here needs to write to the repository, and a
 # token that cannot write is the simplest protection against a malicious pull

@@ -72,6 +72,25 @@ Follow conventional commit prefixes: `feat:`, `fix:`, `docs:`, `build:`, `test:`
 
 Maintainers review new GitHub issues and PRs on a regular cadence. For urgent issues, tag them with the `urgent` label. We aim to respond to new issues within one week.
 
+## Releasing
+
+Relay follows [semantic versioning](https://semver.org). Versions below `1.0.0` may include breaking changes in minor releases. Maintainers release a version as follows:
+
+1. Open a PR that sets the new `version` in `package.json` and merge it to `main`.
+2. Tag that commit and push the tag:
+
+   ```bash
+   git tag v0.2.0
+   git push origin v0.2.0
+   ```
+
+3. The **Release** workflow checks that the tag matches `package.json`, then builds the archives for every platform. It smoke tests the Linux and macOS builds and creates a draft GitHub Release with checksums and generated notes. A version with a pre-release suffix, such as `0.2.0-beta.1`, is marked as a pre-release.
+4. Review the draft's notes, then publish it. The install scripts can only download a release after it is published.
+
+To test a change to the release workflow without releasing, run **Release** from the Actions tab. A manual run builds and validates the current version but does not create a release.
+
+macOS archives are not yet code signed. They run when installed with `scripts/install.sh`, which downloads with `curl` and so does not quarantine the archive.
+
 ## License
 
 By contributing to Relay, you agree that your contributions will be licensed under the [Apache License 2.0](LICENSE).

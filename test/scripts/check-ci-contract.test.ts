@@ -109,9 +109,10 @@ describe("CI contract", () => {
     expect(unitTestScript).not.toContain("test/ui/app-e2e");
   });
 
-  test("CI runs on pushes to main and on pull requests", () => {
+  test("CI runs on pushes to main, pull requests, and merge queue entries", () => {
     expect(ciWorkflow).toMatch(/on:[\s\S]*push:[\s\S]*branches: \[main\]/);
     expect(ciWorkflow).toContain("pull_request:");
+    expect(ciWorkflow).toMatch(/^ {2}merge_group:$/m);
     expect(ciWorkflow).toContain("bun install --frozen-lockfile");
   });
 
