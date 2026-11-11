@@ -139,7 +139,7 @@ test("filters configured Alta internal sessions from the web session list", asyn
   const relay = await startRelayWeb({
     agentMode: "alta-internal-sessions",
     profile: "alta",
-    extraAgentArgs: ["@atlassian/alta-agent-axiom-asumer"],
+    extraAgentArgs: ["@atlassian/alta-agent-axiom-example"],
   });
   try {
     await page.goto(relay.url);
@@ -151,7 +151,7 @@ test("filters configured Alta internal sessions from the web session list", asyn
     const sessionBlock = page.locator(".block.info", { hasText: "Useful web session" }).last();
     await expect(sessionBlock).toBeVisible();
     await expect(sessionBlock).toContainText("web-playwright-session");
-    await expect(sessionBlock).not.toContainText("axiom-asumer");
+    await expect(sessionBlock).not.toContainText("axiom-example");
     await expect(sessionBlock).not.toContainText("junk-package-session");
     await expect(sessionBlock).not.toContainText("junk-cache-session");
 

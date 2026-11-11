@@ -150,12 +150,12 @@ profile = "default"
 
 [agents.runners.onlyjunk]
 command = "bun"
-args = ["${tomlEscape(acpAgent)}", "${tomlEscape(onlyJunkTranscriptPath)}", "cache-history-only-junk", "@atlassian/alta-agent-axiom-asumer"]
+args = ["${tomlEscape(acpAgent)}", "${tomlEscape(onlyJunkTranscriptPath)}", "cache-history-only-junk", "@atlassian/alta-agent-axiom-example"]
 profile = "alta"
 
 [agents.runners.mixed]
 command = "bun"
-args = ["${tomlEscape(acpAgent)}", "${tomlEscape(mixedTranscriptPath)}", "cache-history-with-real", "@atlassian/alta-agent-axiom-asumer"]
+args = ["${tomlEscape(acpAgent)}", "${tomlEscape(mixedTranscriptPath)}", "cache-history-with-real", "@atlassian/alta-agent-axiom-example"]
 profile = "alta"
 `,
       "utf-8",
@@ -420,7 +420,7 @@ expect {
   "No ACP sessions available to resume." { after 200 }
   "junk-cache-session" { stop_relay; exit 2 }
   "junk-package-name-session" { stop_relay; exit 6 }
-  "axiom-asumer" { stop_relay; exit 7 }
+  "axiom-example" { stop_relay; exit 7 }
   timeout { wait_for_file_text ${tclQuote(onlyJunkTranscriptPath)} {"method":"session/list"} 3; after 200 }
 }
 stop_relay

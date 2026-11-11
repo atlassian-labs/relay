@@ -23,8 +23,8 @@ describe("applyAcpSessionUpdate", () => {
   test("coalesces split restored skill user chunks into one renderable user block", () => {
     const app = createMappingFixture();
     const firstChunk = [
-      '<skill name="git-publish" location="/Users/asumer/.agents/skills/git-publish/SKILL.md">',
-      "References are relative to /Users/asumer/.agents/skills/git-publish.",
+      '<skill name="git-publish" location="/Users/me/.agents/skills/git-publish/SKILL.md">',
+      "References are relative to /Users/me/.agents/skills/git-publish.",
       "",
       "Publish current branch.",
     ].join("\n");

@@ -153,8 +153,8 @@ describe("App frame-capture E2E: startup and shell", () => {
         app.renderOnce();
         const frame = app.captureCharFrame();
         expect(frame).toContain("No agent runner configured for: missing-agent");
-        expect(frame).toContain("Available agents: code-");
-        expect(frame).toContain("agent, alta, faux, rovo, codex, claude, cursor");
+        expect(frame).toContain("Available agents: faux,");
+        expect(frame).toContain("rovo, codex, claude, cursor");
         expect(frame).toContain("↗");
         const errorLines = frame
           .split("\n")
@@ -162,7 +162,7 @@ describe("App frame-capture E2E: startup and shell", () => {
             (line) =>
               line.includes("No agent runner configured") ||
               line.includes("Available agents:") ||
-              line.includes("agent, alta, faux, rovo, codex, claude, cursor"),
+              line.includes("rovo, codex, claude, cursor"),
           );
         expect(errorLines.length).toBeGreaterThan(0);
         expect(errorLines.every((line) => line.trim().length <= 72)).toBe(true);

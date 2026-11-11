@@ -1469,12 +1469,12 @@ default = "faux"
 
 [agents.runners.faux]
 command = "faux-agent"
-args = ["@atlassian/alta-agent-axiom-asumer"]
+args = ["@atlassian/alta-agent-axiom-example"]
 profile = "alta"
 `);
     const cwd = tmpWorkspace();
     const faux = createFauxAcpAgent({
-      sessions: [{ sessionId: "dummy-session", title: "axiom-asumer", updatedAt: "2025-01-03T00:00:00.000Z" }],
+      sessions: [{ sessionId: "dummy-session", title: "axiom-example", updatedAt: "2025-01-03T00:00:00.000Z" }],
     });
     const app = await renderFauxApp(cwd, faux);
 
@@ -1486,7 +1486,7 @@ profile = "alta"
         app.renderOnce();
         const frame = app.captureCharFrame();
         expect(frame).toContain("No ACP sessions available to resume");
-        expect(frame).not.toContain("axiom-asumer");
+        expect(frame).not.toContain("axiom-example");
         expect(frame).not.toContain("dummy-session");
       });
       expect(faux.loadSessions).toEqual([]);
@@ -1498,12 +1498,12 @@ profile = "alta"
   test("filters an inline Alta ACP package-name fallback session from the slash resume picker", async () => {
     const cwd = tmpWorkspace();
     const faux = createFauxAcpAgent({
-      sessions: [{ sessionId: "dummy-session", title: "axiom-asumer", updatedAt: "2025-01-03T00:00:00.000Z" }],
+      sessions: [{ sessionId: "dummy-session", title: "axiom-example", updatedAt: "2025-01-03T00:00:00.000Z" }],
     });
     const app = await renderFauxApp(cwd, faux, {
       initialAgent: "",
       initialAcpCommand:
-        'env FOO=bar "/opt/atlassian/bin/atlas" alta agent run npm:@atlassian/alta-agent-axiom-asumer@2026.1.2',
+        'env FOO=bar "/opt/atlassian/bin/atlas" alta agent run npm:@atlassian/alta-agent-axiom-example@2026.1.2',
     });
 
     try {
@@ -1517,7 +1517,7 @@ profile = "alta"
         app.renderOnce();
         const frame = app.captureCharFrame();
         expect(frame).toContain("No ACP sessions available to resume");
-        expect(frame).not.toContain("axiom-asumer");
+        expect(frame).not.toContain("axiom-example");
         expect(frame).not.toContain("dummy-session");
       });
       expect(faux.loadSessions).toEqual([]);

@@ -5,7 +5,6 @@ import { useApp, type ToolBlock } from "../state";
 import { PluginWelcomeScreen } from "./plugin-welcome-screen";
 import { WelcomeScreen } from "./welcome-screen";
 import { StickyPromptHeader } from "./sticky-prompt-header";
-import type { VersionUpdateInfo } from "../../platform/version-check";
 import type { RelayWidgetEntry } from "../../plugins/slots";
 import { preserveStickyScrollBoundaryAfterMouseScrollWithEscapeRecovery } from "../app/scroll-escape-recovery";
 import {
@@ -160,7 +159,6 @@ function isSameSelectionAttempt(left: Selection, right: Selection): boolean {
 export function ChatLog(props: {
   welcomeDismissed: () => boolean;
   renderBlock: (block: any, prevBlock?: any) => any;
-  versionUpdate?: () => VersionUpdateInfo | null;
   welcomeWidgets?: () => readonly RelayWidgetEntry[];
   welcomeAddonWidgets?: () => readonly RelayWidgetEntry[];
   onConnectionErrorModalOpenChange?: (open: boolean) => void;
@@ -1131,7 +1129,6 @@ export function ChatLog(props: {
           when={(props.welcomeWidgets?.() ?? []).length > 0}
           fallback={
             <WelcomeScreen
-              versionUpdate={props.versionUpdate}
               welcomeAddonWidgets={() => props.welcomeAddonWidgets?.() ?? []}
               onConnectionErrorModalOpenChange={props.onConnectionErrorModalOpenChange}
             />

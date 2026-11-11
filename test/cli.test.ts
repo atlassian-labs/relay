@@ -252,9 +252,9 @@ describe("Relay CLI parsing", () => {
   });
 
   test("parses add options through the command grammar", () => {
-    expect(parseCli(["add", "alta", "atlas alta agent run", "--profile", "alta"]).addArgs).toEqual({
+    expect(parseCli(["add", "alta", "alta agent run", "--profile", "alta"]).addArgs).toEqual({
       agentName: "alta",
-      commandString: "atlas alta agent run",
+      commandString: "alta agent run",
       profile: "alta",
     });
   });

@@ -20,7 +20,6 @@ import { TOAST_ERROR_SYMBOL, TOAST_INFO_SYMBOL, TOAST_WARNING_SYMBOL, useToast }
 import { RelayLineText } from "./relay-line-text";
 import { normalizeRelayLines, type RelayWidgetEntry } from "../../plugins/slots";
 import type { RelayLine } from "../../plugins/types";
-import type { VersionUpdateInfo } from "../../platform/version-check";
 import { primaryStartupErrorFromStderr } from "../../acp/startup-error";
 import { getConfig, subscribeConfig } from "../../config";
 import { ModalFrame } from "./modal-frame";
@@ -176,7 +175,6 @@ function wrapModalLines(text: string, width: number): string[] {
 }
 
 export function WelcomeScreen(props: {
-  versionUpdate?: () => VersionUpdateInfo | null;
   welcomeAddonWidgets?: () => readonly RelayWidgetEntry[];
   onConnectionErrorModalOpenChange?: (open: boolean) => void;
 }) {
@@ -312,7 +310,6 @@ export function WelcomeScreen(props: {
           <text>{renderShortcutLine(shortcutLine2)}</text>
         </box>
       </Show>
-      <VersionUpdateBanner update={props.versionUpdate} />
       <box height={1} flexShrink={0} />
       {(() => {
         const messages = infoMessages();
@@ -412,28 +409,6 @@ export function WelcomeAddonWidgets(props: {
           )}
         </For>
       </box>
-    </Show>
-  );
-}
-
-function VersionUpdateBanner(props: { update?: () => VersionUpdateInfo | null }) {
-  const colors = getColors();
-  const dims = useSharedTerminalDimensions();
-  const update = () => props.update?.() ?? null;
-  const linePad = (command: string) =>
-    " ".repeat(Math.max(0, Math.floor((dims().width - `New version available; Update using: ${command}`.length) / 2)));
-  return (
-    <Show when={update()}>
-      {(info) => (
-        <box flexDirection="column" width="100%" flexShrink={0} marginTop={1}>
-          <box width="100%" height={1}>
-            <text fg={colors.info} wrapMode="none">
-              {`${linePad(info().updateCommand)}New version available; Update using: `}
-              <span style={{ fg: colors.notice } as never}>{info().updateCommand}</span>
-            </text>
-          </box>
-        </box>
-      )}
     </Show>
   );
 }

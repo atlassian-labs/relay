@@ -47,7 +47,7 @@
     "release:homebrew-formula": "bash scripts/pinned-bun.sh run scripts/github-release.ts homebrew-formula",
     "release:validate": "bash scripts/pinned-bun.sh run scripts/github-release.ts validate",
     "test": "bash scripts/pinned-bun.sh run test:unit",
-    "test:unit": "bash scripts/pinned-bun.sh test --timeout=60000 ./test/*.test.ts ./test/acp ./test/config ./test/core ./test/lib ./test/perf ./test/platform/startup-prompt.test.ts ./test/platform/telemetry-consent-prompt.test.ts ./test/platform/version-check.test.ts ./test/platform/version-update-prompt.test.ts ./test/plugins ./test/scripts ./test/ui/app ./test/ui/context ./test/ui/ui ./test/ui/util ./test/ui/autocomplete.test.ts ./test/ui/layout.test.ts ./test/ui/welcome-screen.test.tsx ./test/web",
+    "test:unit": "bash scripts/pinned-bun.sh test --timeout=60000 ./test/*.test.ts ./test/acp ./test/config ./test/core ./test/lib ./test/perf ./test/platform/startup-prompt.test.ts ./test/platform/telemetry-consent-prompt.test.ts ./test/plugins ./test/scripts ./test/ui/app ./test/ui/context ./test/ui/ui ./test/ui/util ./test/ui/autocomplete.test.ts ./test/ui/layout.test.ts ./test/ui/welcome-screen.test.tsx ./test/web",
     "bench:chat-log": "bash scripts/pinned-bun.sh run scripts/perf/chat-log-benchmark/index.ts",
     "test:web": "playwright test",
     "test:web:headed": "playwright test --headed",

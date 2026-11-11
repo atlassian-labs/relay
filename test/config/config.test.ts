@@ -7,9 +7,6 @@ import {
   consumeConfigWarnings,
   Config,
   CURRENT_CONFIG_VERSION,
-  defaultAgentNameFor,
-  defaultAgentRunners,
-  migrateConfigV2ToV3,
   validateAgentsConfig,
   getChildSessionReminderTemplate,
   getChildSessionReminderTemplatePath,
@@ -485,7 +482,7 @@ describe("config persistence", () => {
     writeConfig("");
 
     expect(() => resolveConfiguredAgent("missing-agent")).toThrow(
-      `No agent runner configured for: missing-agent. Available agents: code-agent, alta, rovo, codex, claude, cursor. Config file: ${configPath()}`,
+      `No agent runner configured for: missing-agent. Available agents: rovo, codex, claude, cursor. Config file: ${configPath()}`,
     );
   });
 
@@ -495,14 +492,14 @@ default = "axiom"
 
 [agents.runners.axiom]
 command = "/opt/atlassian/bin/atlas"
-args = ["alta", "agent", "run", "@atlassian/alta-agent-axiom-asumer"]
+args = ["alta", "agent", "run", "@atlassian/alta-agent-axiom-example"]
 profile = "alta"
 `);
 
     expect(resolveConfiguredAgentProfile("axiom")).toEqual({
       name: "axiom",
       profile: "alta",
-      internalSessionTitleAliases: ["axiom-asumer"],
+      internalSessionTitleAliases: ["axiom-example"],
     });
   });
 
@@ -526,12 +523,12 @@ profile = "alta"
     expect(
       resolveInlineAcpAgentProfile(
         "",
-        'env FOO=bar "/opt/atlassian/bin/atlas" alta agent run npm:@atlassian/alta-agent-axiom-asumer@2026.1.2',
+        'env FOO=bar "/opt/atlassian/bin/atlas" alta agent run npm:@atlassian/alta-agent-axiom-example@2026.1.2',
       ),
     ).toEqual({
       name: "acp",
       profile: "alta",
-      internalSessionTitleAliases: ["axiom-asumer"],
+      internalSessionTitleAliases: ["axiom-example"],
     });
   });
 
@@ -543,7 +540,7 @@ profile = "alta"
 
     expect(config.agents.default).toBe("codex");
     expect(warnings.some((warning) => warning.includes("Unknown default agent codex"))).toBe(false);
-    expect(listAvailableAgentNames()).toEqual(expect.arrayContaining(["alta", "rovo", "codex", "claude", "cursor"]));
+    expect(listAvailableAgentNames()).toEqual(expect.arrayContaining(["rovo", "codex", "claude", "cursor"]));
     expect(resolveConfiguredAgent("rovodev")).toMatchObject({
       name: "rovo",
       command: ROVO_AGENT_COMMAND,
@@ -841,140 +838,39 @@ renderer = "rovodev"
     expect(backupNames).toContain("config.toml.bak.20250101000005");
   });
 
-  test("migrates the stock Alta default to Code Agent while preserving runner preferences", () => {
-    const original = `[meta]
+  test("upgrades a version 2 Alta config without changing its agents", () => {
+    writeConfig(`[meta]
 config_version = 2
 
 [agents]
 default = "alta"
 
 [agents.runners.alta]
-command = "/opt/atlassian/bin/atlas"
+command = "atlas"
 args = ["alta", "agent", "run"]
 profile = "alta"
 preferred_model = "gpt-5-5-high"
-preferred_thinking_level = "high"
-env = { RELAY_TEST = "1" }
-`;
-    writeConfig(original);
+`);
 
     const config = reloadConfig();
-    const warnings = consumeConfigWarnings();
     const text = fs.readFileSync(configPath(), "utf-8");
 
-    expect(config.agents.default).toBe("code-agent");
-    expect(config.agents.runners["code-agent"]).toEqual({
-      command: "/opt/atlassian/bin/atlas",
-      args: ["alta", "agent", "run", "code-agent"],
-      profile: "alta",
+    expect(config.agents.default).toBe("alta");
+    expect(Object.keys(config.agents.runners)).toEqual(["alta"]);
+    expect(config.agents.runners.alta).toMatchObject({
+      args: ["alta", "agent", "run"],
       preferred_model: "gpt-5-5-high",
-      preferred_thinking_level: "high",
-      env: { RELAY_TEST: "1" },
     });
-    expect(config.agents.runners.alta?.args).toEqual(["alta", "agent", "run"]);
     expect(text).toContain(`config_version = ${CURRENT_CONFIG_VERSION}`);
-    expect(text).toContain("[agents.runners.code-agent]");
-    expect(warnings.some((warning) => warning.includes("changed the default agent from alta to code-agent"))).toBe(
-      true,
-    );
   });
 
-  test("adds Code Agent without replacing a customized Alta default", () => {
-    writeConfig(`[meta]
-config_version = 2
-
-[agents]
-default = "alta"
-
-[agents.runners.alta]
-command = "/opt/atlassian/bin/atlas"
-args = ["alta", "agent", "run", "@atlassian/alta-agent-custom"]
-profile = "alta"
-`);
-
-    const config = reloadConfig();
-
-    expect(config.agents.default).toBe("alta");
-    expect(config.agents.runners.alta?.args).toEqual(["alta", "agent", "run", "@atlassian/alta-agent-custom"]);
-    expect(config.agents.runners["code-agent"]).toMatchObject({
-      args: ["alta", "agent", "run", "code-agent"],
-      profile: "alta",
-    });
-  });
-
-  test("preserves Code Agent preferences while merging Alta runner environment", () => {
-    writeConfig(`[meta]
-config_version = 2
-
-[agents]
-default = "alta"
-
-[agents.runners.alta]
-command = "/opt/atlassian/bin/atlas"
-args = ["alta", "agent", "run"]
-profile = "alta"
-preferred_model = "gpt-5-5-high"
-env = { RELAY_TEST = "1", SHARED = "alta" }
-
-[agents.runners.code-agent]
-command = "/opt/atlassian/bin/atlas"
-args = ["alta", "agent", "run", "code-agent"]
-profile = "alta"
-preferred_model = "gpt-5-6-terra"
-env = { SHARED = "code" }
-`);
-
-    const config = reloadConfig();
-
-    expect(config.agents.default).toBe("code-agent");
-    expect(config.agents.runners["code-agent"]).toMatchObject({
-      preferred_model: "gpt-5-6-terra",
-      env: { RELAY_TEST: "1", SHARED: "code" },
-    });
-  });
-
-  test("does not switch the default to an existing customized Code Agent runner", () => {
-    writeConfig(`[meta]
-config_version = 2
-
-[agents]
-default = "alta"
-
-[agents.runners.alta]
-command = "/opt/atlassian/bin/atlas"
-args = ["alta", "agent", "run"]
-profile = "alta"
-
-[agents.runners.code-agent]
-command = "custom-code-agent"
-args = ["acp"]
-profile = "default"
-`);
-
-    const config = reloadConfig();
-
-    expect(config.agents.default).toBe("alta");
-    expect(config.agents.runners["code-agent"]).toMatchObject({
-      command: "custom-code-agent",
-      args: ["acp"],
-      profile: "default",
-    });
-  });
-
-  test("uses Code Agent for fresh unversioned defaults", () => {
+  test("uses Rovo with no runners for fresh unversioned defaults", () => {
     writeConfig("");
 
     const config = reloadConfig();
 
-    expect(config.agents.default).toBe("code-agent");
-    expect(config.agents.runners["code-agent"]).toMatchObject({
-      args: ["alta", "agent", "run", "code-agent"],
-      profile: "alta",
-    });
-    expect(config.agents.runners.alta).toMatchObject({
-      args: ["alta", "agent", "run"],
-      profile: "alta",
-    });
+    expect(config.agents.default).toBe("rovo");
+    expect(config.agents.runners).toEqual({});
   });
 
   test("does not rewrite unversioned config fixtures", () => {
@@ -1943,49 +1839,7 @@ describe("plugin settings", () => {
     expect(getPluginSettingRaw("global:/clock:0", "clock", "show_seconds")).toBe(true);
   });
 
-  // Without the Atlas CLI the stock runners would point at a binary that is not
-  // installed, so a fresh config must default to a built-in agent instead. The
-  // host running these tests may or may not have Atlas, so both branches are
-  // covered through the pure helpers rather than the detected value.
   describe("default agent selection", () => {
-    test("uses the Alta code agent when the Atlas CLI is present", () => {
-      expect(defaultAgentNameFor("/opt/atlassian/bin/atlas")).toBe("code-agent");
-      expect(Object.keys(defaultAgentRunners("/opt/atlassian/bin/atlas")).sort()).toEqual(["alta", "code-agent"]);
-    });
-
-    test("falls back to a built-in agent with no runners when Atlas is absent", () => {
-      expect(defaultAgentNameFor(null)).toBe("rovo");
-      expect(defaultAgentRunners(null)).toEqual({});
-    });
-
-    // Regression: with no stock code-agent runner the migration used to store
-    // `undefined`, which made the TOML serializer throw. The migration was then
-    // caught and retried on every launch, warning and writing a backup each time.
-    test("does not add a code-agent runner when no stock runner exists", () => {
-      const data: Record<string, unknown> = {
-        agents: { default: "alta", runners: { alta: { command: "/custom/alta", args: ["custom"], profile: "alta" } } },
-      };
-
-      const changes = migrateConfigV2ToV3(data, undefined);
-
-      const runners = (data.agents as { runners: Record<string, unknown> }).runners;
-      expect("code-agent" in runners).toBe(false);
-      expect(changes).not.toContain("added the code-agent runner");
-    });
-
-    test("adds the code-agent runner when a stock runner exists", () => {
-      const data: Record<string, unknown> = {
-        agents: { default: "alta", runners: { alta: { command: "/custom/alta", args: ["custom"], profile: "alta" } } },
-      };
-      const stock = { command: "/opt/atlassian/bin/atlas", args: ["alta", "agent", "run", "code-agent"] };
-
-      const changes = migrateConfigV2ToV3(data, stock);
-
-      const runners = (data.agents as { runners: Record<string, unknown> }).runners;
-      expect(runners["code-agent"]).toEqual(stock);
-      expect(changes).toContain("added the code-agent runner");
-    });
-
     // Regression: a built-in fallback has no runner entry, so an unknown default
     // used to collapse to "" and resolve to no agent at all.
     test("accepts a built-in agent as the fallback default", () => {
@@ -2003,16 +1857,6 @@ describe("plugin settings", () => {
       );
 
       expect(result.default).toBe("custom-agent");
-    });
-
-    test("points the stock runners at the detected Atlas command", () => {
-      const runners = defaultAgentRunners("/usr/local/bin/atlas");
-      expect(runners["code-agent"]).toEqual({
-        command: "/usr/local/bin/atlas",
-        args: ["alta", "agent", "run", "code-agent"],
-        profile: "alta",
-      });
-      expect(runners.alta?.command).toBe("/usr/local/bin/atlas");
     });
   });
 });

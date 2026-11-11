@@ -1,8 +1,7 @@
 /**
  * Open the prompt buffer in an external editor (vim, nano, $EDITOR, ...).
  *
- * Mirrors the F2 "open in editor" affordance from the acra-python rovo dev TUI
- * (see packages/cli-rovodev/src/rovodev/ui/components/chat_input_prompt.py).
+ * Bound to F2 and ctrl+x in the prompt.
  *
  * The caller is responsible for suspending the OpenTUI renderer before invoking
  * `openTextInExternalEditor` and resuming it afterwards. This module only
@@ -143,7 +142,7 @@ export function openTextInExternalEditor(options: ExternalEditorOptions): Promis
         const rawText = readFileSync(handoff.file, { encoding: "utf-8" });
         if (rawText !== options.text) {
           // Trim trailing whitespace/newlines that editors like vim add by
-          // default; mirrors the acra-python behaviour.
+          // default.
           nextText = rawText.replace(/\s+$/u, "");
           changed = nextText !== options.text;
         }

@@ -4,9 +4,7 @@
 
 import * as fs from "fs";
 import * as path from "path";
-import { currentEnv } from "../platform/env";
 import { getCacheDir, getConfigDir, getLegacyConfigDir, CONFIG_DIR_NAME } from "../platform/paths";
-import { spawnSync } from "../platform/process";
 import * as toml from "toml";
 import { Effect, type Scope } from "effect";
 import { RelayError } from "../effect/errors";
@@ -175,95 +173,9 @@ export type ConfigListener = (change: ConfigChange) => void;
 
 export const CURRENT_CONFIG_VERSION = 3;
 
-// ---------------------------------------------------------------------------
-// Detect the atlas binary path at startup.
-//
-// 1. Resolve "atlas" on $PATH (covers all install locations).
-// 2. Probe well-known platform paths that may not be on $PATH.
-// 3. Report null when the CLI is absent, so the defaults below can fall back to
-//    a built-in agent instead of pointing at a binary that does not exist.
-// ---------------------------------------------------------------------------
+// Built-in agents need no runner entry, so a fresh config defines none.
+const DEFAULT_AGENT_NAME = "rovo";
 
-const ATLAS_FALLBACK_PATHS = ["/opt/atlassian/bin/atlas", "/usr/local/bin/atlas"];
-
-function detectAtlasCommand(): string | null {
-  // An explicit override pins detection, so behavior does not depend on whether
-  // the host happens to have the Atlas CLI installed. An empty value means "no
-  // Atlas CLI"; tests use both forms to cover each branch on every machine.
-  const configuredCommand = currentEnv().RELAY_ATLAS_COMMAND?.trim();
-  if (configuredCommand !== undefined) {
-    return configuredCommand.length > 0 ? configuredCommand : null;
-  }
-
-  // Try PATH resolution first — "where" on Windows, "which" elsewhere.
-  try {
-    const whichCmd = process.platform === "win32" ? "where" : "which";
-    const result = spawnSync(whichCmd, ["atlas"], { encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] });
-    const resolved = result.stdout?.trim().split(/\r?\n/)[0]?.trim();
-    if (result.status === 0 && resolved) return resolved;
-  } catch {
-    // PATH lookup unavailable or errored — continue to fallback probes.
-  }
-
-  // Probe well-known locations that might not be on PATH.
-  for (const candidate of ATLAS_FALLBACK_PATHS) {
-    if (fs.existsSync(candidate)) return candidate;
-  }
-
-  // Nothing found — the Atlas runners are omitted from the defaults entirely.
-  return null;
-}
-
-const detectedAtlasCommand = detectAtlasCommand();
-
-// Atlas-managed machines default to the Alta Code Agent. Everywhere else the
-// Atlas runners would point at a binary that is not installed, so the default is
-// a built-in agent that needs no Atlas CLI.
-const ATLAS_DEFAULT_AGENT = "code-agent";
-const BUILTIN_DEFAULT_AGENT = "rovo";
-
-/** Default agent for an install, given whether the Atlas CLI was detected. */
-export function defaultAgentNameFor(atlasCommand: string | null): string {
-  return atlasCommand ? ATLAS_DEFAULT_AGENT : BUILTIN_DEFAULT_AGENT;
-}
-
-const defaultAgentName = defaultAgentNameFor(detectedAtlasCommand);
-
-/**
- * Runner tables for the generated config. Built-in agents need no runner entry,
- * so an install without the Atlas CLI gets none.
- */
-function defaultAgentRunnersToml(atlasCommand: string | null): string {
-  if (!atlasCommand) return "";
-  return `
-[agents.runners.code-agent]
-command = "${atlasCommand}"
-args = ["alta", "agent", "run", "code-agent"]
-profile = "alta"
-
-[agents.runners.alta]
-command = "${atlasCommand}"
-args = ["alta", "agent", "run"]
-profile = "alta"
-`;
-}
-
-/** Stock Atlas runners, omitted when the Atlas CLI is absent. */
-export function defaultAgentRunners(atlasCommand: string | null): ConfigSchema["agents"]["runners"] {
-  if (!atlasCommand) return {};
-  return {
-    "code-agent": {
-      command: atlasCommand,
-      args: ["alta", "agent", "run", "code-agent"],
-      profile: "alta",
-    },
-    alta: {
-      command: atlasCommand,
-      args: ["alta", "agent", "run"],
-      profile: "alta",
-    },
-  };
-}
 const DEFAULT_PROMPT_MARKER = ">";
 const MAX_PROMPT_MARKER_LENGTH = 4;
 
@@ -313,8 +225,8 @@ const DEFAULT_CONFIG_DATA: ConfigSchema = {
   },
   task_types: {},
   agents: {
-    default: defaultAgentName,
-    runners: defaultAgentRunners(detectedAtlasCommand),
+    default: DEFAULT_AGENT_NAME,
+    runners: {},
   },
   plugin_settings: {},
 };
@@ -381,8 +293,8 @@ trusted_workspaces = []
 disabled = []
 
 [agents]
-default = "${defaultAgentName}"
-${defaultAgentRunnersToml(detectedAtlasCommand)}`;
+default = "${DEFAULT_AGENT_NAME}"
+`;
 
 const REMOVED_BUNDLED_PLUGIN_IDS = new Set([
   "bundled:a-shumer",
@@ -1456,122 +1368,7 @@ function ensureRawAgentsConfig(data: Record<string, unknown>): number {
     agents.runners = {};
     changed += 1;
   }
-  if (isRecord(agents.runners) && Object.keys(agents.runners).length === 0) {
-    agents.runners = deepClone(DEFAULT_CONFIG_DATA.agents.runners) as unknown as Record<string, unknown>;
-    changed += 1;
-  }
   return changed;
-}
-
-const STOCK_ALTA_AGENT_ARGS = ["alta", "agent", "run"] as const;
-const STOCK_CODE_AGENT_ARGS = ["alta", "agent", "run", "code-agent"] as const;
-
-function hasExactStringArgs(value: unknown, expected: readonly string[]): boolean {
-  return (
-    Array.isArray(value) && value.length === expected.length && expected.every((arg, index) => value[index] === arg)
-  );
-}
-
-function isAtlasCommand(value: unknown): value is string {
-  return typeof value === "string" && ["atlas", "atlas.exe"].includes(path.basename(value.trim()).toLowerCase());
-}
-
-const STOCK_ATLAS_RUNNER_KEYS = new Set([
-  "command",
-  "args",
-  "profile",
-  "transport",
-  "env",
-  "preferred_model",
-  "preferred_thinking_level",
-]);
-
-function hasOnlyStockAtlasRunnerKeys(value: Record<string, unknown>): boolean {
-  return Object.keys(value).every((key) => STOCK_ATLAS_RUNNER_KEYS.has(key));
-}
-
-function isStockAltaRunner(value: unknown): value is Record<string, unknown> {
-  return (
-    isRecord(value) &&
-    hasOnlyStockAtlasRunnerKeys(value) &&
-    isAtlasCommand(value.command) &&
-    hasExactStringArgs(value.args, STOCK_ALTA_AGENT_ARGS) &&
-    (value.profile === undefined || value.profile === "alta") &&
-    (value.transport === undefined || value.transport === "stdio")
-  );
-}
-
-function isStockCodeAgentRunner(value: unknown): value is Record<string, unknown> {
-  return (
-    isRecord(value) &&
-    hasOnlyStockAtlasRunnerKeys(value) &&
-    isAtlasCommand(value.command) &&
-    hasExactStringArgs(value.args, STOCK_CODE_AGENT_ARGS) &&
-    (value.profile === undefined || value.profile === "alta") &&
-    (value.transport === undefined || value.transport === "stdio")
-  );
-}
-
-function copyAltaRunnerOverrides(altaRunner: Record<string, unknown>, codeAgentRunner: Record<string, unknown>): void {
-  if (isRecord(altaRunner.env)) {
-    codeAgentRunner.env = {
-      ...deepClone(altaRunner.env),
-      ...(isRecord(codeAgentRunner.env) ? deepClone(codeAgentRunner.env) : {}),
-    };
-  }
-  for (const key of ["preferred_model", "preferred_thinking_level"] as const) {
-    if (codeAgentRunner[key] === undefined && altaRunner[key] !== undefined) {
-      codeAgentRunner[key] = deepClone(altaRunner[key]);
-    }
-  }
-}
-
-function codeAgentRunnerFromAlta(altaRunner: Record<string, unknown>): Record<string, unknown> {
-  const runner: Record<string, unknown> = {
-    command: altaRunner.command,
-    args: [...STOCK_CODE_AGENT_ARGS],
-    profile: "alta",
-  };
-  copyAltaRunnerOverrides(altaRunner, runner);
-  return runner;
-}
-
-export function migrateConfigV2ToV3(
-  data: Record<string, unknown>,
-  // Passed in rather than defaulted so tests can cover both the Atlas-present
-  // and Atlas-absent shapes regardless of whether the host has the CLI, and so
-  // an explicit `undefined` cannot silently fall back to the stock runner.
-  stockCodeAgent: unknown,
-): string[] {
-  const agents = getMutableSection(data, "agents");
-  const runners = getMutableSection(agents, "runners");
-  const altaRunner = runners.alta;
-  let addedCodeAgent = false;
-
-  if (!isRecord(runners["code-agent"])) {
-    // Without the Atlas CLI there is no stock code-agent runner to fall back to.
-    // Writing `undefined` here would make the TOML serializer throw, so the
-    // migration would fail on every launch and keep writing backups.
-    if (isStockAltaRunner(altaRunner)) {
-      runners["code-agent"] = codeAgentRunnerFromAlta(altaRunner);
-      addedCodeAgent = true;
-    } else if (isRecord(stockCodeAgent)) {
-      runners["code-agent"] = deepClone(stockCodeAgent);
-      addedCodeAgent = true;
-    }
-  }
-
-  const changes: string[] = [];
-  if (addedCodeAgent) changes.push("added the code-agent runner");
-  const codeAgentRunner = runners["code-agent"];
-  if (isStockAltaRunner(altaRunner) && isStockCodeAgentRunner(codeAgentRunner)) {
-    copyAltaRunnerOverrides(altaRunner, codeAgentRunner);
-  }
-  if (agents.default === "alta" && isStockAltaRunner(altaRunner) && isStockCodeAgentRunner(codeAgentRunner)) {
-    agents.default = "code-agent";
-    changes.push("changed the default agent from alta to code-agent");
-  }
-  return changes;
 }
 
 function migrateConfigV1ToV2(data: Record<string, unknown>): string[] {
@@ -1605,10 +1402,9 @@ function applyConfigMigrations(data: Record<string, unknown>): ConfigMigrationRe
     changes.push(...migrateConfigV1ToV2(data));
     version = 2;
   }
-  if (version < 3) {
-    changes.push(...migrateConfigV2ToV3(data, DEFAULT_CONFIG_DATA.agents.runners["code-agent"]));
-    version = 3;
-  }
+  // Version 3 changed only the stock Atlas runners, which Relay no longer
+  // generates, so upgrading from version 2 just updates the version number.
+  if (version < 3) version = 3;
 
   normalizeMeta(data);
   if (changes.length === 0) changes.push("updated config version metadata");
