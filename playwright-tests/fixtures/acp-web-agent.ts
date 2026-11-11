@@ -162,12 +162,12 @@ async function handleLine(line: string): Promise<void> {
             {
               sessionId: "junk-cache-session",
               title:
-                "/Users/me/.cache/alta/agents/axiom-asumer@2026.26.2522/node_modules/@atlassian/alta-agent-axiom-asumer/agent.yml",
+                "/Users/me/.cache/alta/agents/axiom-example@2026.26.2522/node_modules/@atlassian/alta-agent-axiom-example/agent.yml",
               updatedAt: "2026-06-28T04:00:00.000Z",
             },
             {
               sessionId: "junk-package-session",
-              title: "axiom-asumer",
+              title: "axiom-example",
               updatedAt: "2026-06-28T05:00:00.000Z",
             },
             { sessionId, title: "Useful web session", updatedAt: "2026-06-27T04:00:00.000Z" },

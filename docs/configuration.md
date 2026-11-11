@@ -2,11 +2,6 @@
 
 Relay reads `~/.config/relay/config.toml` (`$XDG_CONFIG_HOME/relay/config.toml` when set). If it does not exist, Relay creates it with the current defaults. Legacy `~/.relay/` is migrated automatically on first run.
 
-## Invoking Relay
-
-Commands in this document are shown as `relay`. Where Relay is installed as an
-Atlas CLI plugin, run `atlas relay` instead and pass the same arguments.
-
 ## Agents
 
 Relay launches the default agent from `[agents]`, a named built-in agent, or a named runner from `--agent <name>`.
@@ -28,21 +23,7 @@ Set one as the default with:
 default = "codex"
 ```
 
-A freshly generated config defines `code-agent` and `alta` runners that call the
-Atlas CLI. They only work where that CLI is installed, so set `default` to a
-built-in agent such as `codex` if you do not have it:
-
-```toml
-[agents]
-default = "code-agent"
-
-[agents.runners.code-agent]
-command = "atlas"
-args = ["alta", "agent", "run", "code-agent"]
-profile = "alta"
-```
-
-The `alta` runner is retained as a compatibility alias. Versioned stock configs migrate to `code-agent`; custom commands or agent sources remain unchanged. Fresh Code Agent runners have no `preferred_model`, so the agent keeps its own default. Existing model and thinking preferences are preserved as user overrides.
+A freshly generated config defaults to `rovo` and defines no runners.
 
 Add a custom runner without editing TOML:
 

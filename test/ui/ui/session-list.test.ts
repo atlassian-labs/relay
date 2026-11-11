@@ -71,7 +71,7 @@ describe("session list filtering", () => {
       session("real", "which repo are you in", "2026-01-01T00:00:00.000Z"),
       session(
         "cache",
-        "/Users/me/.cache/alta/agents/axiom-asumer@2026.26.2522/node_modules/@atlassian/alta-agent-axiom-asumer/agent.yml",
+        "/Users/me/.cache/alta/agents/axiom-example@2026.26.2522/node_modules/@atlassian/alta-agent-axiom-example/agent.yml",
         "2026-06-28T03:53:31.000Z",
       ),
     ];
@@ -82,10 +82,10 @@ describe("session list filtering", () => {
   test("filters configured Alta agent fallback titles before sorting resume sessions", () => {
     const sessions = [
       session("real", "which repo are you in", "2026-01-01T00:00:00.000Z"),
-      session("dummy", "axiom-asumer", "2026-06-28T03:53:31.000Z"),
+      session("dummy", "axiom-example", "2026-06-28T03:53:31.000Z"),
     ];
     const policy = resolveAgentBehaviorProfile("alta", {
-      internalSessionTitleAliases: ["axiom-asumer"],
+      internalSessionTitleAliases: ["axiom-example"],
     }).sessionListPolicy;
 
     expect(resumableSessions(sessions, policy).map((item) => item.sessionId)).toEqual(["real"]);

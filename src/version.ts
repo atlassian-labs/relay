@@ -27,11 +27,6 @@ const atlasPluginVersion = publishedVersion(currentEnv().RELAY_ATLAS_PLUGIN_VERS
 // archives that are not Atlas-managed.
 const releaseShimVersion = publishedVersion(currentEnv().RELAY_RELEASE_VERSION);
 
-// Only Atlas-managed installs can be upgraded by `atlas plugin upgrade`. Local
-// launchers may still carry a published version, but updating Atlas does not
-// replace their build.
-export const IS_ATLAS_PLUGIN_INSTALL = atlasPluginVersion !== null;
-
 // Shim installs receive their exact artifact version from the Go shim. Source and
 // local installs use the Atlas version pinned in the repository.
 export const VERSION = atlasPluginVersion ?? releaseShimVersion ?? pinnedAtlasVersion() ?? "dev";

@@ -151,8 +151,6 @@ import { getVimStatus, initialVimState, type VimState } from "./util/vim-engine"
 import { previewFromBlocks } from "./util/thread-preview";
 import { refreshVimSelectionHighlight } from "./util/vim-selection-highlight";
 import { TRANSCRIPT_RENDERER_ROLLOUT_DEFAULT } from "./util/transcript-renderer-mode";
-import { checkRelayVersionUpdate, type VersionUpdateInfo } from "../platform/version-check";
-import { IS_ATLAS_PLUGIN_INSTALL } from "../version";
 import {
   clearPluginDiffOverlay,
   closeDiffOverlay,
@@ -1745,7 +1743,6 @@ export function App(props: AppProps) {
   const bumpAllPluginWidgetRevisions = (): void => {
     for (const placement of PLUGIN_WIDGET_PLACEMENTS) bumpPluginWidgetRevision(placement);
   };
-  const [versionUpdate, setVersionUpdate] = createSignal<VersionUpdateInfo | null>(null);
   const nativeStatusValues = new Map<string, RelayPluginStatus>();
   const [nativeChromeRevision, setNativeChromeRevision] = createSignal(0);
   const setNativeStatus = (key: string, value: RelayPluginStatus | undefined): void => {
@@ -2417,18 +2414,6 @@ export function App(props: AppProps) {
 
   // Initialize on mount
   onMount(() => {
-    // Only Atlas-managed installs can act on `atlas plugin upgrade`; source and
-    // local launchers carry a pinned version that the prompt cannot update, so
-    // showing it there is a false positive. Mirrors the CLI gate in index.ts.
-    if (IS_ATLAS_PLUGIN_INSTALL) {
-      void checkRelayVersionUpdate()
-        .then((update) => {
-          if (appDisposed || appInstanceId !== store.activeAppInstanceId) return;
-          setVersionUpdate(update);
-        })
-        .catch(() => undefined);
-    }
-
     runUiEffect(
       Effect.promise(async () => {
         _sessionStartTime = Date.now();
@@ -3080,7 +3065,6 @@ export function App(props: AppProps) {
           } catch {}
         }
       }}
-      versionUpdate={versionUpdate}
     />
   );
 }

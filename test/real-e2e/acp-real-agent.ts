@@ -32,8 +32,8 @@ let buffer = "";
 let promptCount = 0;
 let foregroundSessionId = "real-new-session";
 const internalAltaCacheTitle =
-  "/Users/asumer/.cache/alta/agents/axiom-asumer@2026.26.2522/node_modules/@atlassian/alta-agent-axiom-asumer/agent.yml";
-const internalAltaPackageNameTitle = "axiom-asumer";
+  "/Users/me/.cache/alta/agents/axiom-example@2026.26.2522/node_modules/@atlassian/alta-agent-axiom-example/agent.yml";
+const internalAltaPackageNameTitle = "axiom-example";
 
 record({ event: "started", pid: process.pid });
 

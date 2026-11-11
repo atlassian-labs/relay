@@ -109,7 +109,7 @@ The faux agent streams for roughly 10–15 seconds for every user message, wheth
 - `src/plugins/` — plugin API, loader, lifecycle, commands, keybindings, renderers, MCP wiring, bundled plugins.
 - `src/config/` — TOML config loading, schema validation, themes, migrations, live updates.
 - `src/core/` — provider-agnostic conversation types, events, threads, diffs, and git/worktree helpers.
-- `src/platform/` — filesystem, process, environment/path, time, Git diff, and version-check adapters.
+- `src/platform/` — filesystem, process, environment/path, time, and Git diff adapters.
 - `src/web/` — local web dashboard server and browser client assets.
 - `test/` — Bun unit/integration tests.
 - `playwright-tests/` — browser/web Playwright tests.

@@ -23,7 +23,7 @@ Requires Bun. Use Bun as the package manager/runtime, not npm/pnpm/yarn.
 
 ```bash
 bun install                  # install dependencies
-bun run dev --agent alta     # run from source through scripts/pinned-bun.sh
+bun run dev --agent codex    # run from source through scripts/pinned-bun.sh
 bun run web                  # run the web UI entrypoint
 bun run build                # bundle to dist/
 bun run typecheck            # tsgo / TypeScript 7 native-preview check
@@ -55,7 +55,7 @@ bun run check                # pinned Bun check: version + typecheck + lint + ef
 - `src/core/`: provider- and runtime-agnostic conversation, activity, command, thread, handoff, user-message, and diff domain types/helpers.
 - `src/acp/`: the ACP boundary—SDK types, JSON-RPC transports, protocol client, capabilities, process lifecycle, session configuration, and agent compatibility profiles.
 - `src/application/`: ACP-to-domain mapping and session/launch use cases shared by TUI, web, and exec modes.
-- `src/platform/`: thin filesystem, process, git, time, environment, crypto, and version-update adapters for runtime boundaries.
+- `src/platform/`: thin filesystem, process, git, time, environment, and crypto adapters for runtime boundaries.
 - `src/ui/`: SolidJS/OpenTUI terminal UI, routes, controllers, contexts, state, autocomplete, paste handling, layout, and reusable components.
 - `src/ui/tool-renderers/`: generic and agent-specific tool rendering profiles. Keep agent-specific presentation behavior here when possible.
 - `src/web/`: web server, static assets, WebSocket session bridge, and browser client entrypoint.

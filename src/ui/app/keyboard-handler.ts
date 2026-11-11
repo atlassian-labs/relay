@@ -1120,7 +1120,7 @@ export function createAppKeyboardHandler(deps: KeyboardHandlerDeps): (evt: any) 
     }
 
     // F2 / ctrl+x - open the prompt in an external editor ($EDITOR / $VISUAL / vi).
-    // Available in any input mode, matching the acra-python rovo dev TUI.
+    // Available in any input mode.
     if (
       ((evt.name === "f2" && !evt.ctrl) || (evt.ctrl && keyName === "x")) &&
       !evt.meta &&

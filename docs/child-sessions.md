@@ -4,8 +4,6 @@ Relay supports two child-session entry points: agent-driven delegation through t
 
 A child is a normal Relay thread with its own agent session, not a background tool call. Sessions have one of two roles: a parent can create children, while a child cannot create additional sessions. The feature is available while the Relay TUI or web dashboard that owns the parent session is running.
 
-Commands in this document are shown as `relay`. Where Relay is installed as an Atlas CLI plugin, run `atlas relay` instead and pass the same arguments.
-
 For the underlying handoff protocol and orchestration internals, see [Agent handoff orchestration](agent-handoff.md).
 
 ## TUI child-session controls

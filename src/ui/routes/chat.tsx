@@ -34,7 +34,6 @@ import { ThreadSidebar } from "../component/thread-sidebar";
 import type { ToastContextValue } from "../ui/toast";
 import { ToastContext } from "../ui/toast";
 import { getColors, getSyntaxStyle } from "../context/theme";
-import type { VersionUpdateInfo } from "../../platform/version-check";
 import type { PluginRunner, RelayCommandContext, RelayEditorSegmentContent, RelayPluginStatus } from "../../plugins";
 import {
   normalizeRelayLines,
@@ -149,7 +148,6 @@ export interface ChatRouteProps {
   archiveThread: (threadId: string) => void;
   onRootMouseDown: () => void;
   onRootMouseUp: () => void;
-  versionUpdate?: () => VersionUpdateInfo | null;
 }
 
 export function ChatRoute(props: ChatRouteProps) {
@@ -338,7 +336,6 @@ function ChatRouteContent(input: { route: ChatRouteProps }) {
                 <PluginInlineWidgets widgets={() => pluginWidgets("appHeader")} placement="appHeader" height={1} />
                 <ChatLog
                   welcomeDismissed={props.welcomeDismissed}
-                  versionUpdate={props.versionUpdate}
                   welcomeWidgets={() => pluginWidgets("welcome")}
                   welcomeAddonWidgets={() => pluginWidgets("welcomeAddon")}
                   onConnectionErrorModalOpenChange={(open) =>

@@ -74,7 +74,7 @@ describe("terminal title utilities", () => {
   test("formats prompt intent before workspace context", () => {
     expect(
       terminalTitleForState({
-        cwd: "/Users/kutsav/Workspaces/tui/relay",
+        cwd: "/Users/me/Workspaces/tui/relay",
         blocks: [{ type: "user", id: "user-1", content: "do we have any uncommited changes" }],
       }),
     ).toBe("do we have any uncommited changes · relay");
@@ -83,7 +83,7 @@ describe("terminal title utilities", () => {
   test("uses session title when no prompt intent is available", () => {
     expect(
       terminalTitleForState({
-        cwd: "/Users/kutsav/Workspaces/tui/relay",
+        cwd: "/Users/me/Workspaces/tui/relay",
         sessionTitle: "Investigate release readiness",
       }),
     ).toBe("Investigate release readiness · relay");
@@ -92,7 +92,7 @@ describe("terminal title utilities", () => {
   test("uses latest prompt intent instead of stale session title", () => {
     expect(
       terminalTitleForState({
-        cwd: "/Users/kutsav/Workspaces/tui/relay",
+        cwd: "/Users/me/Workspaces/tui/relay",
         sessionTitle: "Investigate release readiness",
         blocks: [userBlock("first prompt", { id: "user-1" }), userBlock("second prompt", { id: "user-2" })],
       }),
@@ -102,7 +102,7 @@ describe("terminal title utilities", () => {
   test("formats skill invocations as intent without transcript badges", () => {
     expect(
       terminalTitleForState({
-        cwd: "/Users/kutsav/Workspaces/tui/relay",
+        cwd: "/Users/me/Workspaces/tui/relay",
         blocks: [
           userBlock("/review focus on regressions", {
             origin: "local",
@@ -116,7 +116,7 @@ describe("terminal title utilities", () => {
   test("uses latest skill invocation instead of first skill invocation", () => {
     expect(
       terminalTitleForState({
-        cwd: "/Users/kutsav/Workspaces/tui/relay",
+        cwd: "/Users/me/Workspaces/tui/relay",
         sessionTitle: "review — first",
         blocks: [
           userBlock("/review first", {
@@ -137,7 +137,7 @@ describe("terminal title utilities", () => {
   test("uses latest prompt title before block history catches up", () => {
     expect(
       terminalTitleForState({
-        cwd: "/Users/kutsav/Workspaces/tui/relay",
+        cwd: "/Users/me/Workspaces/tui/relay",
         latestPromptTitleIntent: promptIntent("review — second"),
         sessionTitle: "review — first",
         blocks: [
@@ -170,7 +170,7 @@ describe("terminal title utilities", () => {
     ]) {
       expect(
         terminalTitleForState({
-          cwd: "/Users/kutsav/Workspaces/tui/relay",
+          cwd: "/Users/me/Workspaces/tui/relay",
           latestPromptTitleIntent: promptIntent(lowSignal),
           blocks: [userBlock("implement terminal title smart mode", { id: "user-1" })],
         }),
@@ -188,7 +188,7 @@ describe("terminal title utilities", () => {
     ] as const) {
       expect(
         terminalTitleForState({
-          cwd: "/Users/kutsav/Workspaces/tui/relay",
+          cwd: "/Users/me/Workspaces/tui/relay",
           latestPromptTitleIntent: promptIntent(input),
           blocks: [userBlock("implement terminal title smart mode", { id: "user-1" })],
         }),
@@ -201,7 +201,7 @@ describe("terminal title utilities", () => {
 
     expect(
       terminalTitleForState({
-        cwd: "/Users/kutsav/Workspaces/tui/relay",
+        cwd: "/Users/me/Workspaces/tui/relay",
         terminalTitlePromptSource: "first",
         latestPromptTitleIntent: promptIntent("latest prompt"),
         blocks,
@@ -210,7 +210,7 @@ describe("terminal title utilities", () => {
 
     expect(
       terminalTitleForState({
-        cwd: "/Users/kutsav/Workspaces/tui/relay",
+        cwd: "/Users/me/Workspaces/tui/relay",
         terminalTitlePromptSource: "last",
         latestPromptTitleIntent: promptIntent("yes"),
         blocks,
@@ -221,7 +221,7 @@ describe("terminal title utilities", () => {
   test("smart prompt source uses bare skill latest title only as a fallback", () => {
     expect(
       terminalTitleForState({
-        cwd: "/Users/kutsav/Workspaces/tui/relay",
+        cwd: "/Users/me/Workspaces/tui/relay",
         latestPromptTitleIntent: promptIntent("/review", { name: "review" }),
         sessionTitle: "Investigate release readiness",
       }),
@@ -229,7 +229,7 @@ describe("terminal title utilities", () => {
 
     expect(
       terminalTitleForState({
-        cwd: "/Users/kutsav/Workspaces/tui/relay",
+        cwd: "/Users/me/Workspaces/tui/relay",
         latestPromptTitleIntent: promptIntent("/review", { name: "review" }),
         sessionTitle: "New thread",
       }),
@@ -239,7 +239,7 @@ describe("terminal title utilities", () => {
   test("smart prompt source ranks strong prompts above bare skill fallbacks", () => {
     expect(
       terminalTitleForState({
-        cwd: "/Users/kutsav/Workspaces/tui/relay",
+        cwd: "/Users/me/Workspaces/tui/relay",
         blocks: [
           userBlock("/review", {
             id: "user-1",
@@ -253,7 +253,7 @@ describe("terminal title utilities", () => {
 
     expect(
       terminalTitleForState({
-        cwd: "/Users/kutsav/Workspaces/tui/relay",
+        cwd: "/Users/me/Workspaces/tui/relay",
         sessionTitle: "New thread",
         blocks: [
           userBlock("/review", {
@@ -267,7 +267,7 @@ describe("terminal title utilities", () => {
 
     expect(
       terminalTitleForState({
-        cwd: "/Users/kutsav/Workspaces/tui/relay",
+        cwd: "/Users/me/Workspaces/tui/relay",
         blocks: [
           userBlock("/review focus on regressions", {
             id: "user-1",
@@ -280,7 +280,7 @@ describe("terminal title utilities", () => {
 
     expect(
       terminalTitleForState({
-        cwd: "/Users/kutsav/Workspaces/tui/relay",
+        cwd: "/Users/me/Workspaces/tui/relay",
         blocks: [
           userBlock("implement smart titles", { id: "user-1" }),
           userBlock("/review", {
@@ -296,7 +296,7 @@ describe("terminal title utilities", () => {
   test("smart prompt source falls back to session title when every prompt is low signal", () => {
     expect(
       terminalTitleForState({
-        cwd: "/Users/kutsav/Workspaces/tui/relay",
+        cwd: "/Users/me/Workspaces/tui/relay",
         sessionTitle: "Implement terminal title setting",
         latestPromptTitleIntent: promptIntent("yes"),
         blocks: [userBlock("ok", { id: "user-1" }), userBlock("thanks", { id: "user-2" })],
@@ -307,7 +307,7 @@ describe("terminal title utilities", () => {
   test("ignores current-turn guidance when choosing latest title intent", () => {
     expect(
       terminalTitleForState({
-        cwd: "/Users/kutsav/Workspaces/tui/relay",
+        cwd: "/Users/me/Workspaces/tui/relay",
         sessionTitle: "Investigate release readiness",
         blocks: [
           userBlock("primary prompt", { id: "user-1" }),
@@ -320,7 +320,7 @@ describe("terminal title utilities", () => {
   test("compacts raw ACP filesystem skill echoes for title intent", () => {
     expect(
       terminalTitleForState({
-        cwd: "/Users/kutsav/Workspaces/tui/relay",
+        cwd: "/Users/me/Workspaces/tui/relay",
         blocks: [
           userBlock(
             [
@@ -340,8 +340,8 @@ describe("terminal title utilities", () => {
   });
 
   test("uses workspace basename and stable fallback", () => {
-    expect(workspaceTerminalTitleLabel("/Users/asumer/work/asumer/")).toBe("asumer");
-    expect(workspaceTerminalTitleLabel("C:\\Users\\asumer\\config\\")).toBe("config");
+    expect(workspaceTerminalTitleLabel("/Users/me/work/project/")).toBe("project");
+    expect(workspaceTerminalTitleLabel("C:\\Users\\me\\config\\")).toBe("config");
     expect(workspaceTerminalTitleLabel("/tmp/some-incredibly-long-workspace-directory-name")).toBe(
       "some-incredibly-long-workspace-directory-name",
     );

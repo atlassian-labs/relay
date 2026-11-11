@@ -26,8 +26,8 @@ function queue(...texts: string[]): QueuedPrompt[] {
 
 function skillPrompt(args = ""): string {
   const block = [
-    '<skill name="git-publish" location="/Users/asumer/.agents/skills/git-publish/SKILL.md">',
-    "References are relative to /Users/asumer/.agents/skills/git-publish.",
+    '<skill name="git-publish" location="/Users/me/.agents/skills/git-publish/SKILL.md">',
+    "References are relative to /Users/me/.agents/skills/git-publish.",
     "",
     "Publish current branch.",
     "</skill>",

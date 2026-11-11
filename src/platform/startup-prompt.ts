@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------------
 // Shared full-screen startup prompt used before the TUI renders.
-// Both the version-update prompt and the telemetry consent prompt delegate to
+// The telemetry consent prompt delegates to
 // this module for the raw-mode TTY interaction loop and ANSI rendering helpers.
 // ---------------------------------------------------------------------------
 

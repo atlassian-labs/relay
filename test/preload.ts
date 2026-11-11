@@ -16,12 +16,6 @@ process.env.XDG_CACHE_HOME = path.join(testRoot, "cache");
 process.env.RELAY_TEST_ROOT = testRoot;
 process.env.RELAY_DISABLE_NOTIFICATIONS = "1";
 
-// Pin Atlas CLI detection. Without this the generated default agent config
-// depends on whether the host has the Atlas CLI installed, so the same suite
-// passes on a developer machine and fails in CI. Tests covering the
-// Atlas-absent fallback set this to "" themselves.
-process.env.RELAY_ATLAS_COMMAND = "/opt/atlassian/bin/atlas";
-
 // Keep spawned shells (e.g. the ! / !! user-bash commands) hermetic. We redirect
 // HOME above, but zsh still sources $ZDOTDIR/.zshenv and bash still sources
 // $BASH_ENV / $ENV for non-interactive shells. Left pointing at the developer's

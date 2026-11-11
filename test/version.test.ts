@@ -13,17 +13,12 @@ function temporaryRoot(): string {
   return root;
 }
 
-async function buildVersion(embeddedVersion?: string, printInstallKind = false): Promise<string> {
+async function buildVersion(embeddedVersion?: string): Promise<string> {
   const root = temporaryRoot();
   const entrypoint = resolve(root, "entry.ts");
   const outdir = resolve(root, "dist");
   const versionModule = JSON.stringify(resolve(repoRoot, "src/version.ts"));
-  writeFileSync(
-    entrypoint,
-    printInstallKind
-      ? `import { IS_ATLAS_PLUGIN_INSTALL } from ${versionModule};\nconsole.log(IS_ATLAS_PLUGIN_INSTALL);\n`
-      : `import { VERSION } from ${versionModule};\nconsole.log(VERSION);\n`,
-  );
+  writeFileSync(entrypoint, `import { VERSION } from ${versionModule};\nconsole.log(VERSION);\n`);
   writeFileSync(resolve(root, ".relay-version"), "2026.99.1+runtime\n");
 
   const result = await Bun.build({
@@ -82,16 +77,8 @@ describe("version resolution", () => {
     expect(runVersion(entrypoint)).toBe("2026.99.1+runtime");
   });
 
-  test("only identifies versions supplied by the Atlas shim as Atlas installs", async () => {
-    const entrypoint = await buildVersion("2026.42.7+embedded", true);
-    expect(runVersion(entrypoint)).toBe("false");
-    expect(runVersion(entrypoint, "2026.43.1+atlas")).toBe("true");
-  });
-
-  test("uses the public shim version without identifying an Atlas install", async () => {
-    const versionEntrypoint = await buildVersion("2026.42.7+embedded");
-    expect(runVersion(versionEntrypoint, undefined, "0.1.0")).toBe("0.1.0");
-    const installKindEntrypoint = await buildVersion("2026.42.7+embedded", true);
-    expect(runVersion(installKindEntrypoint, undefined, "0.1.0")).toBe("false");
+  test("uses the public shim version over the embedded release", async () => {
+    const entrypoint = await buildVersion("2026.42.7+embedded");
+    expect(runVersion(entrypoint, undefined, "0.1.0")).toBe("0.1.0");
   });
 });

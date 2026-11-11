@@ -94,7 +94,7 @@ describe("welcome screen tips", () => {
 
   test("summarizes generic startup errors for bounded welcome previews", () => {
     const content = [
-      "No agent runner configured for: missing-agent. Available agents: code-agent, alta, faux, rovo, codex, claude, cursor. Config file: /tmp/relay/config.toml",
+      "No agent runner configured for: missing-agent. Available agents: faux, rovo, codex, claude, cursor. Config file: /tmp/relay/config.toml",
       "Use --agent <name> to select another agent.",
     ].join("\n");
 
@@ -103,7 +103,7 @@ describe("welcome screen tips", () => {
     expect(summary).toEqual({
       lead: "",
       reason:
-        "No agent runner configured for: missing-agent. Available agents: code-agent, alta, faux, rovo, codex, claude, cursor. Config file: /tmp/relay/config.toml",
+        "No agent runner configured for: missing-agent. Available agents: faux, rovo, codex, claude, cursor. Config file: /tmp/relay/config.toml",
       details: content,
       title: "Startup error",
     });

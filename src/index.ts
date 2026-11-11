@@ -21,19 +21,9 @@ import { normalizeChildSessionTaskTypeName } from "./core/child-session-task-typ
 import { initializeRelayLogger, relayLogLevelFromEnv } from "./logging/logger";
 import { launchTUI } from "./ui/app";
 import { launchWeb } from "./web/server";
-import {
-  checkRelayVersionUpdate,
-  clearRelayVersionUpdateCache,
-  compareVersions,
-  getInstalledRelayVersion,
-  postponeRelayVersionUpdate,
-  runRelayVersionUpdate,
-  type VersionUpdateInfo,
-} from "./platform/version-check";
-import { renderVersionUpdateCompleteMessage, runVersionUpdatePrompt } from "./platform/version-update-prompt";
 import { runTelemetryConsentPrompt } from "./platform/telemetry-consent-prompt";
 import { startupPromptSupported } from "./platform/startup-prompt";
-import { IS_ATLAS_PLUGIN_INSTALL, VERSION, VERSION_LABEL } from "./version";
+import { VERSION, VERSION_LABEL } from "./version";
 import { initializeTelemetry, TELEMETRY_CONSENT_REQUIRED, telemetryEnvDisabled } from "./telemetry";
 import { readTelemetryConsent, telemetryConsentExists, writeTelemetryConsent } from "./telemetry-storage";
 import { ExecInterruptedError, runExec } from "./exec";
@@ -94,12 +84,12 @@ Subcommands:
   add <name> "<command>"     Add an agent runner to ~/.config/relay/config.toml
       --profile <profile>    Optional profile: alta, codex, claude, rovodev, default
                              Defaults to the agent name, falling back to default if unknown
-                             Example: relay add alta "atlas alta agent run" --profile alta
+                             Example: relay add my-agent "my-agent acp" --profile default
   exec [prompt]              Run one ACP prompt without starting a UI; use - to read stdin
                              Supports --agent, --model, and --thinking-level
   web                        Start Relay as a local web server and open the dashboard
   acp <command>              Launch an inline ACP server command instead of a configured runner
-                             Example: relay acp "atlas alta agent run"
+                             Example: relay acp "my-agent acp"
   list sessions              List live sessions across running Relay instances
   inspect session <name>     Read sanitized recent turns from a live session
   message <name> <text...>   Steer a running session or submit/queue a turn
@@ -135,24 +125,6 @@ Triggers and shortcuts:
   !!cmd      Run a local shell command and attach the output to the next prompt
   ?          Show keyboard shortcuts
 `);
-}
-
-function installedVersionSatisfiesUpdate(installedVersion: string | null, update: VersionUpdateInfo): boolean {
-  if (!installedVersion) return false;
-  const comparison = compareVersions(installedVersion, update.version);
-  return comparison !== null && comparison >= 0;
-}
-
-async function postponeFailedRelayUpdate(
-  update: VersionUpdateInfo,
-  cacheDir: string,
-  installedVersion: string | null = null,
-): Promise<void> {
-  await postponeRelayVersionUpdate(
-    { ...update, currentVersion: installedVersion ?? update.currentVersion },
-    { cacheDir },
-  );
-  console.error("Relay update did not complete. The update prompt will be postponed for 6 hours.");
 }
 
 async function main() {
@@ -289,7 +261,7 @@ async function main() {
     const { agentName, commandString, profile } = parsed.addArgs;
     if (!agentName || !commandString || !commandString.trim()) {
       console.error(
-        'Error: add requires a name and a quoted command, for example: relay add my-agent "atlas alta agent run my-pkg" --profile alta',
+        'Error: add requires a name and a quoted command, for example: relay add my-agent "my-agent acp" --profile default',
       );
       process.exit(1);
     }
@@ -310,7 +282,7 @@ async function main() {
   }
 
   if (parsed.acpCommand !== undefined && parsed.acpCommand.length === 0) {
-    console.error('Error: acp requires a command, for example: relay acp "atlas alta agent run"');
+    console.error('Error: acp requires a command, for example: relay acp "my-agent acp"');
     process.exit(1);
   }
 
@@ -398,29 +370,6 @@ async function main() {
       });
     }
     logger.info("telemetry.consent", { enabled });
-  }
-
-  const skipUpdatePrompt = parsed.prompt !== undefined && parsed.prompt.trim().length > 0;
-  if (IS_ATLAS_PLUGIN_INSTALL && !skipUpdatePrompt) {
-    const update = await checkRelayVersionUpdate({ cacheDir });
-    if (update) {
-      const selection = await runVersionUpdatePrompt(update);
-      if (selection === "update") {
-        const exitCode = await runRelayVersionUpdate();
-        if (exitCode !== 0) {
-          await postponeFailedRelayUpdate(update, cacheDir);
-        } else {
-          const installedVersion = await getInstalledRelayVersion();
-          if (!installedVersionSatisfiesUpdate(installedVersion, update)) {
-            await postponeFailedRelayUpdate(update, cacheDir, installedVersion);
-          } else {
-            await clearRelayVersionUpdateCache(cacheDir);
-            console.log(renderVersionUpdateCompleteMessage(installedVersion ?? update.version));
-            process.exit(0);
-          }
-        }
-      }
-    }
   }
 
   await launchTUI({
