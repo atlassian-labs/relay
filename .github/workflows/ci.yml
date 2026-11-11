@@ -129,6 +129,33 @@ jobs:
           - id: path-autocomplete
             name: Path Autocomplete
             script: test:e2e:path-autocomplete
+          - id: completion-sound
+            name: Completion Sound
+            script: test:e2e:completion-sound
+          - id: terminal-notification
+            name: Terminal Notifications
+            script: test:e2e:terminal-notification
+          - id: replayed-config-sound
+            name: Replayed Config Sound
+            script: test:e2e:replayed-config-sound
+          - id: live-config-sound
+            name: Live Config Sound
+            script: test:e2e:live-config-sound
+          - id: config-reload
+            name: Config Reload
+            script: test:e2e:config-reload
+          - id: prompt-marker
+            name: Prompt Marker
+            script: test:e2e:prompt-marker
+          - id: active-turn-input
+            name: Active Turn Input
+            script: test:e2e:active-turn-input
+          - id: vim-keybindings
+            name: Vim Keybindings
+            script: test:e2e:vim-keybindings
+          - id: terminal-title
+            name: Terminal Title
+            script: test:e2e:terminal-title
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

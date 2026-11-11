@@ -156,23 +156,16 @@ describe("CI contract", () => {
     const lanes = matrixEntries("e2e");
     const laneScripts = lanes.map((lane) => lane.script);
 
-    for (const script of [
-      "test:e2e:app",
-      "test:e2e:cli",
-      "test:e2e:child-process-exit",
-      "test:e2e:normalized-diff",
-      "test:e2e:ui-polish",
-      "test:e2e:slash-command",
-      "test:e2e:chat-autoscroll",
-      "test:e2e:split-mouse-escape",
-      "test:e2e:prompt-history",
-      "test:e2e:prompt-queue",
-      "test:e2e:startup-tips",
-      "test:e2e:tui-stress",
-      "test:e2e:path-autocomplete",
-    ]) {
-      expect(laneScripts).toContain(script);
-    }
+    // Every lane of the local `bun run test:e2e` aggregate runs in CI, except
+    // these, which the previous pipeline did not run either.
+    const localOnlyLanes = ["test:e2e:large-session-resume", "test:e2e:websocket"];
+    const aggregateLanes = String(packageJson.scripts["test:e2e"])
+      .split(" && ")
+      .map((command) => command.replace(/^bash scripts\/pinned-bun\.sh run /, ""));
+    for (const script of localOnlyLanes) expect(aggregateLanes).toContain(script);
+    expect(laneScripts.toSorted()).toEqual(
+      aggregateLanes.filter((script) => !localOnlyLanes.includes(script)).toSorted(),
+    );
     expect(new Set(laneScripts).size).toBe(laneScripts.length);
     for (const lane of lanes) {
       expect(packageJson.scripts?.[lane.script]).toBeString();
